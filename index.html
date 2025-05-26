@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Hana vs Fiocco</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; background: #111; overflow: hidden; }
+    canvas { display: block; }
+    #counter {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: sans-serif;
+      font-size: 24px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+<div id="counter">Colpi subiti: 0<br>Fiocchi presi: 0</div>
+<canvas id="canvas"></canvas>
+<script>
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const counterEl = document.getElementById("counter");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+
+  class Ball {
+    constructor() {
+      this.radius = 12 + Math.random() * 18;
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.dx = (Math.random() - 0.5) * 5;
+      this.dy = (Math.random() - 0.5) * 5;
+      this.color = "hsl(" + (Math.random() * 360) + ", 100%, 60%)";
+    }
+
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+
+    update() {
+      if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.dx *= -1;
+      if (this.y + this.radius > canvas.height || this.y - this.radius < 0) this.dy *= -1;
+      this.x += this.dx;
+      this.y += this.dy;
+      this.draw();
+    }
+  }
+
+  class Hana {
+    constructor() {
+      this.imgRight = new Image();
+      this.imgLeft = new Image();
+      this.imgRight.src = "hana_chibi_finale.png";
+      this.imgLeft.src = "hana_chibi_finale_mirrored.png";
+      this.width = 96;
+      this.height = 128;
+      this.x = canvas.width / 2;
+      this.y = canvas.height / 2;
+      this.vx = 1;
+      this.vy = 1;
+      this.facingLeft = false;
+    }
+
+    draw() {
+      const img = this.facingLeft ? this.imgLeft : this.imgRight;
+      ctx.drawImage(img, this.x, this.y, this.width, this.height);
+    }
+
+    update(targetX, targetY) {
+      let dx = targetX - this.x;
+      let dy = targetY - this.y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 1) {
+        this.vx += (dx / dist) * 0.2;
+        this.vy += (dy / dist) * 0.2;
+      }
+
+      this.vx *= 0.95;
+      this.vy *= 0.95;
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      if (this.vx < 0) this.facingLeft = true;
+      if (this.vx > 0) this.facingLeft = false;
+
+      // bordi
+      if (this.x < 0) this.x = 0;
+      if (this.y < 0) this.y = 0;
+      if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+      if (this.y + this.height > canvas.height) this.y = canvas.height - this.height;
+
+      this.draw();
+    }
+  }
+
+  
+    class Fiocco {
+      constructor() {
+        this.img = new Image();
+        this.img.src = "fiocco_sprite.png";
+        this.width = 64;
+        this.height = 48;
+        this.x = Math.random() * (canvas.width - this.width);
+        this.y = Math.random() * (canvas.height - this.height);
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+      }
+
+      draw() {
+        ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+      }
+
+      update(hanaX, hanaY) {
+        let dx = this.x - hanaX;
+        let dy = this.y - hanaY;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 500 && dist > 0) {
+          this.vx += (dx / dist) * 0.1;
+          this.vy += (dy / dist) * 0.1;
+        }
+
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // rimbalzo ai bordi come le palline
+        if (this.x < 0 || this.x + this.width > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y + this.height > canvas.height) this.vy *= -1;
+
+        // limiti schermo
+        if (this.x < 0) this.x = 0;
+        if (this.y < 0) this.y = 0;
+        if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+        if (this.y + this.height > canvas.height) this.y = canvas.height - this.height;
+
+        this.draw();
+      }
+    }
+    
+    constructor() {
+      this.img = new Image();
+      this.img.src = "fiocco_sprite.png";
+      this.width = 64;
+      this.height = 48;
+      this.x = Math.random() * (canvas.width - this.width);
+      this.y = Math.random() * (canvas.height - this.height);
+      this.vx = 0;
+      this.vy = 0;
+    }
+
+    draw() {
+      ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+    }
+
+    update(hanaX, hanaY) {
+      let dx = this.x - hanaX;
+      let dy = this.y - hanaY;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 500) {
+        this.vx += (dx / dist) * 0.3;
+        this.vy += (dy / dist) * 0.3;
+      }
+
+      this.vx *= 0.9;
+      this.vy *= 0.9;
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      if (this.x < 0) this.x = 0;
+      if (this.y < 0) this.y = 0;
+      if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+      if (this.y + this.height > canvas.height) this.y = canvas.height - this.height;
+
+      this.draw();
+    }
+  }
+
+  const balls = Array.from({ length: 10 }, () => new Ball());
+  const hana = new Hana();
+  const fiocco = new Fiocco();
+  let colpi = 0;
+let fiocchiPresi = 0;
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    balls.forEach(ball => {
+      ball.update();
+      let dx = hana.x + hana.width/2 - ball.x;
+      let dy = hana.y + hana.height/2 - ball.y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < hana.width/2 + ball.radius) {
+        colpi++;
+        counterEl.textContent = "Colpi subiti: " + colpi;
+        // teletrasporta pallina per non contare di nuovo subito
+        ball.x = Math.random() * canvas.width;
+        ball.y = Math.random() * canvas.height;
+      }
+    });
+
+    
+    
+    fiocco.update(hana.x, hana.y);
+
+    // controllo se Hana prende il fiocco
+    let fx = hana.x + hana.width/2 - (fiocco.x + fiocco.width/2);
+    let fy = hana.y + hana.height/2 - (fiocco.y + fiocco.height/2);
+    let distanzaFiocco = Math.sqrt(fx * fx + fy * fy);
+    if (distanzaFiocco < 60) {
+      fiocchiPresi++;
+      counterEl.innerHTML = "Colpi subiti: " + colpi + "<br>Fiocchi presi: " + fiocchiPresi;
+      // ricrea fiocco in nuova posizione
+      fiocco.x = Math.random() * (canvas.width - fiocco.width);
+      fiocco.y = Math.random() * (canvas.height - fiocco.height);
+      fiocco.vx = (Math.random() - 0.5) * 3;
+      fiocco.vy = (Math.random() - 0.5) * 3;
+    }
+    
+    
+    hana.update(fiocco.x, fiocco.y);
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
+</body>
+</html>
